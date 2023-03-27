@@ -26,5 +26,10 @@ if options[:help]
 end
 
 require 'rbbt/workflow'
+Workflow.require_workflow "HTSBenchmark"
+job = HTSBenchmark.example_step(:NEAT_simulate_DNA, "Example")
+job.produce
+
 Workflow.require_workflow "SyntheticRDNA"
-SyntheticRDNA.job(:simulate_sample).produce
+job = SyntheticRDNA.job(:simulate_sample)
+job.produce
