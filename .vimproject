@@ -1,0 +1,27 @@
+SyntheticRDNA=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt *.conf" {
+ workflow.rb
+ bin=bin filter="*"{
+ }
+ lib=lib {
+ }
+ test=test {
+  test_helper.rb
+ }
+ data=data filter="*"{
+  Readme.txt
+  T2T.rDNA_copies_per_unique_morph.tsv
+  T2T_rDNA.consensus.fa.gz
+  T2T_rDNA.consensus.fa.gz.md5
+  T2T_rDNA45S.219_morphs.fa.gz
+  T2T_rDNA45S.219_morphs.fa.gz.md5
+  T2T_rDNA45S.219_morphs.fa.md5
+  T2T_rDNA45S.24_uniq_morphs.fa.gz
+  T2T_rDNA45S.24_uniq_morphs.fa.gz.md5
+  T2T_rDNA5S.2_uniq_morphs.fa
+ }
+ share=share{
+  rbbt_commands=rbbt_commands filter="*"{
+   bootstrap
+  }
+ }
+}
