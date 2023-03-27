@@ -29,7 +29,9 @@ require 'rbbt/workflow'
 Workflow.require_workflow "HTSBenchmark"
 job = HTSBenchmark.example_step(:NEAT_simulate_DNA, "Example")
 job.produce
+job.recursive_clean
 
 Workflow.require_workflow "SyntheticRDNA"
-job = SyntheticRDNA.job(:simulate_sample)
+job = SyntheticRDNA.job(:simulate_sample, "Benchmark", :sample_contigs => 1)
 job.produce
+job.recursive_clean
