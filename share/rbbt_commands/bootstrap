@@ -25,6 +25,7 @@ if options[:help]
   exit 0
 end
 
+require 'rbbt/workflow'
 Workflow.require_workflow "HTSBenchmark"
 job = HTSBenchmark.example_step(:NEAT_simulate_DNA, "Example")
 job.produce
