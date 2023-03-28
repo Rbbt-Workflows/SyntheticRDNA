@@ -155,9 +155,9 @@ module SyntheticRDNA
   dep :sample_fasta
   dep_task :simulate_sample, HTSBenchmark, :NEAT_simulate_DNA, :reference => :sample_fasta
 
-  input :numer_of_samples, :integer, "How many samples to generate", 100
+  input :number_of_samples, :integer, "How many samples to generate", 100
   dep :simulate_sample do |jobname,options|
-    options[:numer_of_samples].to_i.times.collect do |i|
+    options[:number_of_samples].to_i.times.collect do |i|
       {:jobname => "Sample#{i}"}
     end
   end
