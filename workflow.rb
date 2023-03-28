@@ -20,8 +20,8 @@ module SyntheticRDNA
     {:inputs => options}
   end
 
-  helper :load_contigs do |fasta_file|
-    contigs = {}
+  helper :load_morphs do |fasta_file|
+    morphs = {}
     name_line = nil
     TSV.traverse fasta_file, :type => :array do |line|
       line.strip!
@@ -29,44 +29,44 @@ module SyntheticRDNA
         next
       elsif line.start_with? ">"
         name_line = line
-        contigs[name_line] = ""
+        morphs[name_line] = ""
       else
-        contigs[name_line] += line.strip
+        morphs[name_line] += line.strip
       end
     end
 
-    contigs
+    morphs
   end
 
-  helper :preprocess_mutation do |contig,pad|
-    pos = rand(contig.length).floor
+  helper :preprocess_mutation do |morph,pad|
+    pos = rand(morph.length).floor
 
     start = pos - pad
     eend = pos + pad
     start = 0 if start < 0
 
-    reference = contig[pos] 
-    original = contig[start..eend] 
+    reference = morph[pos] 
+    original = morph[start..eend] 
 
     [pos, start, eend, reference, original]
   end
 
-  input :reference_contigs, :file, "FASTA with reference contigs", Rbbt.data["T2T_rDNA45S.24_uniq_morphs.fa.gz"]
+  input :reference_morphs, :file, "FASTA with reference morphs", Rbbt.data["T2T_rDNA45S.24_uniq_morphs.fa.gz"]
   input :number_of_snvs, :integer, "Number of SNV to introduce", 100
   input :number_of_ins, :integer, "Number of insertions", 20
   input :number_of_del, :integer, "Number of deletions", 20
   input :pad, :integer, "Surronding area", 100
-  task :mutation_catalogue => :array do |reference_contigs,number_of_snvs,number_of_ins,number_of_del,pad|
-    contigs = load_contigs reference_contigs
+  task :mutation_catalogue => :array do |reference_morphs,number_of_snvs,number_of_ins,number_of_del,pad|
+    morphs = load_morphs reference_morphs
 
     snvs = number_of_snvs.times.collect do 
-      contig = contigs[contigs.keys.sample]
-      pos, start, eend, reference, original = preprocess_mutation contig, pad
+      morph = morphs[morphs.keys.sample]
+      pos, start, eend, reference, original = preprocess_mutation morph, pad
 
       alt = (%w(A C T G) - [reference.upcase]).shuffle.first
       alt = alt.downcase if reference == reference.downcase
       mutated = begin
-                  tmp = contig.dup
+                  tmp = morph.dup
                   tmp[pos] = alt
                   tmp[start..eend] 
                 end
@@ -74,13 +74,13 @@ module SyntheticRDNA
     end
 
     ins = number_of_ins.times.collect do 
-      contig = contigs[contigs.keys.sample]
-      pos, start, eend, reference, original = preprocess_mutation contig, pad
+      morph = morphs[morphs.keys.sample]
+      pos, start, eend, reference, original = preprocess_mutation morph, pad
 
       size = rand(6).to_i + 2
       alt = size.times.collect{ %w(A C T G).sample } * ""
       mutated = begin
-                  tmp = contig.dup
+                  tmp = morph.dup
                   tmp[pos] += alt
                   tmp[start..eend] 
                 end
@@ -88,12 +88,12 @@ module SyntheticRDNA
     end
 
     dels = number_of_del.times.collect do 
-      contig = contigs[contigs.keys.sample]
-      pos, start, eend, reference, original = preprocess_mutation contig, pad
+      morph = morphs[morphs.keys.sample]
+      pos, start, eend, reference, original = preprocess_mutation morph, pad
 
       size = rand(6).to_i + 1
       mutated = begin
-                  tmp = contig.dup
+                  tmp = morph.dup
                   tmp[(pos..pos+size-1)] = ""
                   tmp[start..(eend-size)] 
                 end
@@ -104,39 +104,39 @@ module SyntheticRDNA
   end
 
   dep :mutation_catalogue
-  input :reference_contigs, :file, "FASTA with reference contigs", Rbbt.data["T2T_rDNA45S.24_uniq_morphs.fa.gz"]
-  input :catalogue_size, :integer, "Number of contigs to create", 144
-  input :mutations_per_contig, :integer, "Number of mutations to introduce in each contig", 10
+  input :reference_morphs, :file, "FASTA with reference morphs", Rbbt.data["T2T_rDNA45S.24_uniq_morphs.fa.gz"]
+  input :catalogue_size, :integer, "Number of synthetic morphs to create", 144
+  input :mutations_per_morph, :integer, "Number of mutations to introduce in each morph", 10
   extension "fa"
-  task :contig_catalogue => :text do |reference_contigs,catalogue_size,mutations_per_contig|
-    original_contigs = load_contigs reference_contigs
+  task :morph_catalogue => :text do |reference_morphs,catalogue_size,mutations_per_morph|
+    original_morphs = load_morphs reference_morphs
     mutations = step(:mutation_catalogue).load.collect{|e| e.split("=>") }
 
-    original_contig_keys = original_contigs.keys
-    catalogue_size.times.collect do |contig_number|
-      contig_source = original_contig_keys.sample
-      original_sequence = original_contigs[contig_source]
+    original_morph_keys = original_morphs.keys
+    catalogue_size.times.collect do |morph_number|
+      morph_source = original_morph_keys.sample
+      original_sequence = original_morphs[morph_source]
 
       selected_mutations = mutations
         .select{|ref,mut| original_sequence.include? ref }
-        .sample(mutations_per_contig)
+        .sample(mutations_per_morph)
 
       mutated_sequence = original_sequence.dup
-      mutations_per_contig.times do 
+      mutations_per_morph.times do 
         ref, mut = mutations.select{|ref,mut| mutated_sequence.include? ref}.first
         mutated_sequence[ref] = mut
       end
 
-      name = ">synth_#{contig_number}.#{contig_source[1..-1]}"
+      name = ">synth_#{morph_number}.#{morph_source[1..-1]}"
       [name, mutated_sequence] * "\n"
     end * "\n"
   end
 
-  dep :contig_catalogue, :jobname => "SharedCatalogue"
+  dep :morph_catalogue, :jobname => "SharedCatalogue"
   input :sample_contigs, :integer, "Number of sample contigs", 200
   extension "fa.gz"
   task :sample_fasta => :text do |sample_contigs|
-    catalogue = load_contigs step(:contig_catalogue).path
+    catalogue = load_morphs step(:morph_catalogue).path
     catalogue_keys = catalogue.keys
     txt = sample_contigs.times.collect do |sample_contig|
       base = catalogue_keys.sample
@@ -153,7 +153,7 @@ module SyntheticRDNA
   end
 
   dep :sample_fasta
-  dep_task :simulate_sample, HTSBenchmark, :NEAT_simulate_DNA, :reference => :sample_fasta, :depth => 50
+  dep_task :simulate_sample, HTSBenchmark, :NEAT_simulate_DNA, :reference => :sample_fasta
 
   input :numer_of_samples, :integer, "How many samples to generate", 100
   dep :simulate_sample do |jobname,options|
