@@ -71,7 +71,7 @@ module SyntheticRDNA
                   tmp[pos] = alt
                   tmp[start..eend] 
                 end
-      [original, mutated] * "=>" + "-" + [morph_code, pos + 1, alt] * ":"
+      [original, mutated] * "=>" + "-" + [morph_code, pos + 1, [reference,alt]*">"] * ":"
     end
 
     ins = number_of_ins.times.collect do 
@@ -115,6 +115,8 @@ module SyntheticRDNA
     original_morphs = load_morphs reference_morphs
     mutations = step(:mutation_catalogue).load.collect{|e| e.split(/=>|->/) }
 
+    pad = step(:mutation_catalogue).inputs[:pad]
+
     original_morph_keys = original_morphs.keys
     catalogue_size.times.collect do |morph_number|
       morph_source = original_morph_keys.sample
@@ -124,7 +126,13 @@ module SyntheticRDNA
         .select{|ref,mut| original_sequence.include? ref }
         .sample(mutations_per_morph)
 
-      mutation_info = selected_mutations.collect{|ref,mut,info| [info, original_sequence.index(ref) + 1] * "\t" }
+      mutation_info = selected_mutations.collect{|ref,mut,info| 
+        orig_pos = info.split(":")[1].to_i
+        fixed_pad = [pad, orig_pos].min
+        location = original_sequence.index(ref) + 1 + fixed_pad
+
+        [info, location] * "\t" 
+      }
 
       mutated_sequence = original_sequence.dup
       mutations_per_morph.times do 
