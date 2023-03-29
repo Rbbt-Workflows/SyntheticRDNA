@@ -122,16 +122,33 @@ module SyntheticRDNA
       morph_source = original_morph_keys.sample
       original_sequence = original_morphs[morph_source]
 
+      name = ">synth_#{morph_number}.#{morph_source[1..-1]}"
+
       selected_mutations = mutations
         .select{|ref,mut| original_sequence.include? ref }
         .sample(mutations_per_morph)
 
       mutation_info = selected_mutations.collect{|ref,mut,info| 
-        orig_pos = info.split(":")[1].to_i
+        orig_morph, orig_pos, change = info.split(":")
+        orig_pos = orig_pos.to_i
+
         fixed_pad = [pad, orig_pos].min
         location = original_sequence.index(ref) + 1 + fixed_pad
+        fixed = [morph_source[1..-1], location, change] * ":"
 
-        [info, location] * "\t" 
+        offset = selected_mutations
+          .collect{|ref,mut,info| info }
+          .reject{|i| i.split(":").last.include? ">" }
+          .select{|i| i.split(":")[1].to_i < orig_pos }
+          .inject(0) do |acc,i|  
+            change = i.split(":").last
+            shift = change.include?("+") ? change.length - 1 : - change.length
+            acc += shift
+          end
+        fixed_and_offset = [name[1..-1], location + offset, change] * ":"
+
+
+        [info, location, fixed, fixed_and_offset] * "\t" 
       }
 
       mutated_sequence = original_sequence.dup
@@ -140,9 +157,7 @@ module SyntheticRDNA
         mutated_sequence[ref] = mut
       end
 
-      name = ">synth_#{morph_number}.#{morph_source[1..-1]}"
-
-      file('mutations')[name[1..-1]].write(mutation_info * "\n")
+      file('mutations')[name[1..-1]].write(mutation_info * "\n" + "\n")
 
       [name, mutated_sequence] * "\n"
     end * "\n"
