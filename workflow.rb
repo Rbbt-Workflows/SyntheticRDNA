@@ -60,7 +60,8 @@ module SyntheticRDNA
     morphs = load_morphs reference_morphs
 
     snvs = number_of_snvs.times.collect do 
-      morph = morphs[morphs.keys.sample]
+      morph_code = morphs.keys.sample
+      morph = morphs[morph_code]
       pos, start, eend, reference, original = preprocess_mutation morph, pad
 
       alt = (%w(A C T G) - [reference.upcase]).shuffle.first
@@ -70,11 +71,12 @@ module SyntheticRDNA
                   tmp[pos] = alt
                   tmp[start..eend] 
                 end
-      [original, mutated] * "=>"
+      [original, mutated] * "=>" + "-" + [morph_code, pos + 1, alt] * ":"
     end
 
     ins = number_of_ins.times.collect do 
-      morph = morphs[morphs.keys.sample]
+      morph_code = morphs.keys.sample
+      morph = morphs[morph_code]
       pos, start, eend, reference, original = preprocess_mutation morph, pad
 
       size = rand(6).to_i + 2
@@ -84,11 +86,12 @@ module SyntheticRDNA
                   tmp[pos] += alt
                   tmp[start..eend] 
                 end
-      [original, mutated] * "=>"
+      [original, mutated] * "=>" + "-" + [morph_code, pos + 1, "+" + alt] * ":"
     end
 
     dels = number_of_del.times.collect do 
-      morph = morphs[morphs.keys.sample]
+      morph_code = morphs.keys.sample
+      morph = morphs[morph_code]
       pos, start, eend, reference, original = preprocess_mutation morph, pad
 
       size = rand(6).to_i + 1
@@ -97,7 +100,7 @@ module SyntheticRDNA
                   tmp[(pos..pos+size-1)] = ""
                   tmp[start..(eend-size)] 
                 end
-      [original, mutated] * "=>"
+      [original, mutated] * "=>" + "-" + [morph_code, pos + 1, "-" * size] * ":"
     end
 
     snvs + ins + dels
@@ -110,7 +113,7 @@ module SyntheticRDNA
   extension "fa"
   task :morph_catalogue => :text do |reference_morphs,catalogue_size,mutations_per_morph|
     original_morphs = load_morphs reference_morphs
-    mutations = step(:mutation_catalogue).load.collect{|e| e.split("=>") }
+    mutations = step(:mutation_catalogue).load.collect{|e| e.split(/=>|->/) }
 
     original_morph_keys = original_morphs.keys
     catalogue_size.times.collect do |morph_number|
@@ -121,6 +124,8 @@ module SyntheticRDNA
         .select{|ref,mut| original_sequence.include? ref }
         .sample(mutations_per_morph)
 
+      mutation_info = selected_mutations.collect{|ref,mut,info| [info, original_sequence.index(ref) + 1] * "\t" }
+
       mutated_sequence = original_sequence.dup
       mutations_per_morph.times do 
         ref, mut = mutations.select{|ref,mut| mutated_sequence.include? ref}.first
@@ -128,6 +133,9 @@ module SyntheticRDNA
       end
 
       name = ">synth_#{morph_number}.#{morph_source[1..-1]}"
+
+      file('mutations')[name[1..-1]].write(mutation_info * "\n")
+
       [name, mutated_sequence] * "\n"
     end * "\n"
   end
