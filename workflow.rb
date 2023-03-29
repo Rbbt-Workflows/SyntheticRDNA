@@ -141,10 +141,11 @@ module SyntheticRDNA
           .reject{|i| i.split(":").last.include? ">" }
           .select{|i| i.split(":")[1].to_i < orig_pos }
           .inject(0) do |acc,i|  
-            change = i.split(":").last
-            shift = change.include?("+") ? change.length - 1 : - change.length
+            c = i.split(":").last
+            shift = c.include?("+") ? c.length - 1 : - c.length
             acc += shift
           end
+
         fixed_and_offset = [name[1..-1], location + offset, change] * ":"
 
 
