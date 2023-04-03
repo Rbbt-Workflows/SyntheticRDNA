@@ -71,7 +71,7 @@ module SyntheticRDNA
                   tmp[pos] = alt
                   tmp[start..eend] 
                 end
-      [original, mutated] * "=>" + "-" + [morph_code, pos + 1, [reference,alt]*">"] * ":"
+      [original, mutated] * "=>" + "-" + [morph_code, pos + 1, [reference,alt]*">",pos - start] * ":"
     end
 
     ins = number_of_ins.times.collect do 
@@ -84,9 +84,9 @@ module SyntheticRDNA
       mutated = begin
                   tmp = morph.dup
                   tmp[pos] += alt
-                  tmp[start..eend] 
+                  tmp[start..eend+size] 
                 end
-      [original, mutated] * "=>" + "-" + [morph_code, pos + 1, "+" + alt] * ":"
+      [original, mutated] * "=>" + "-" + [morph_code, pos + 1, "+" + alt,pos - start] * ":"
     end
 
     dels = number_of_del.times.collect do 
@@ -100,7 +100,7 @@ module SyntheticRDNA
                   tmp[(pos..pos+size-1)] = ""
                   tmp[start..(eend-size)] 
                 end
-      [original, mutated] * "=>" + "-" + [morph_code, pos + 1, "-" * size] * ":"
+      [original, mutated] * "=>" + "-" + [morph_code, pos + 1, "-" * size,pos - start] * ":"
     end
 
     snvs + ins + dels
@@ -127,6 +127,8 @@ module SyntheticRDNA
       selected_mutations = mutations
         .select{|ref,mut| original_sequence.include? ref }
         .sample(mutations_per_morph)
+        .collect{|ref,mut,info| [ref, mut, info, original_sequence.index(ref)] }
+        .sort_by{|ref,mut,info,pos| pos }
 
       mutation_info = selected_mutations.collect{|ref,mut,info| 
         orig_morph, orig_pos, change = info.split(":")
@@ -138,10 +140,10 @@ module SyntheticRDNA
 
         offset = selected_mutations
           .collect{|ref,mut,info| info }
-          .reject{|i| i.split(":").last.include? ">" }
+          .reject{|i| i.split(":")[2].include? ">" }
           .select{|i| i.split(":")[1].to_i < orig_pos }
           .inject(0) do |acc,i|  
-            c = i.split(":").last
+            c = i.split(":")[2]
             shift = c.include?("+") ? c.length - 1 : - c.length
             acc += shift
           end
@@ -153,10 +155,13 @@ module SyntheticRDNA
       }
 
       mutated_sequence = original_sequence.dup
-      mutations_per_morph.times do 
-        ref, mut = mutations.select{|ref,mut| mutated_sequence.include? ref}.first
-        break if ref.nil?
-        mutated_sequence[ref] = mut
+      acc_offset = 0
+      selected_mutations.each do |ref,mut,info,pos|
+        offset = info.split(":").last.to_i
+
+        mutated_sequence[pos+offset+acc_offset..pos+acc_offset+ref.length-1] = mut[offset..-1]
+
+        acc_offset += mut.size - ref.size
       end
 
       file('mutations')[name[1..-1]].write(mutation_info * "\n" + "\n")

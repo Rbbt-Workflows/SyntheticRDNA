@@ -1,6 +1,7 @@
 SyntheticRDNA=/$PWD filter="*.rb *.rake Rakefile *.rdoc *.R *.sh *.js *.haml *.sass *.txt *.conf" {
  workflow.rb
  bin=bin filter="*"{
+  get_fasta_pos.rb
  }
  lib=lib {
  }
