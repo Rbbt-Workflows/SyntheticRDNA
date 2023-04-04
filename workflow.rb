@@ -51,11 +51,11 @@ module SyntheticRDNA
     [pos, start, eend, reference, original]
   end
 
-  input :reference_morphs_for_mutations, :file, "FASTA with reference morphs", Rbbt.data["T2T_rDNA45S.24_uniq_morphs.fa.gz"]
+  input :reference_morphs_for_mutations, :file, "FASTA with reference morphs", Rbbt.data["T2T_rDNA.consensus.single.fa.gz"]
   input :number_of_snvs, :integer, "Number of SNV to introduce", 100
   input :number_of_ins, :integer, "Number of insertions", 20
   input :number_of_del, :integer, "Number of deletions", 20
-  input :pad, :integer, "Surronding area", 100
+  input :pad, :integer, "Surronding area", 10
   task :mutation_catalogue => :array do |reference_morphs,number_of_snvs,number_of_ins,number_of_del,pad|
     morphs = load_morphs reference_morphs
 
