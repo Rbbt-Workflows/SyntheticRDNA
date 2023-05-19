@@ -176,17 +176,19 @@ module SyntheticRDNA
   task :sample_fasta => :text do |sample_contigs|
     catalogue = load_morphs step(:morph_catalogue).path
     catalogue_keys = catalogue.keys
+    selected_base_morphs = []
     txt = sample_contigs.times.collect do |sample_contig|
       base = catalogue_keys.sample
+      selected_base_morphs << base
       sequence = catalogue[base]
       name = ">sample_#{sample_contig}.#{base[1..-1]}"
       [name, sequence] * "\n"
     end * "\n"
     tmpfile = file('tmp.fa')
+    Open.write(file('selected_base_morphs.list'), selected_base_morphs * "\n")
     Open.write(tmpfile, txt + "\n")
     CMD.cmd("bgzip #{tmpfile}")
     Open.mv tmpfile + '.gz', self.tmp_path
-    Open.rm_rf files_dir
     nil
   end
 
