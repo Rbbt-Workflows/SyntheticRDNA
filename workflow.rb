@@ -224,7 +224,7 @@ module SyntheticRDNA
           txts << [name, sequence] * "\n"
           sample_contig += 1
         end
-        break if selected_base_morphs.length > sample_contig
+        break if selected_base_morphs.length > sample_contigs
       end
     end
 
