@@ -197,7 +197,7 @@ module SyntheticRDNA
   input :number_of_base_morphs_min, :integer, "Min number of different base morphs in sample", 5
   input :number_of_base_morphs_max, :integer, "Max number of different base morphs in sample", 20
   input :number_of_copies_per_base_morph_min, :integer, "Min number of copies per base morph", 1
-  input :number_of_copies_per_base_morph_max, :integer, "MAx number of copies per base morph", 100
+  input :number_of_copies_per_base_morph_max, :integer, "Max number of copies per base morph", 100
   extension "fa.gz"
   task :sample_fasta => :text do |sample_contigs, number_of_base_morphs_min, number_of_base_morphs_max, number_of_copies_per_base_morph_min, number_of_copies_per_base_morph_max|
     catalogue = load_morphs step(:morph_catalogue).path
