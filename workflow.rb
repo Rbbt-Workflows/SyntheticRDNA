@@ -173,7 +173,7 @@ module SyntheticRDNA
   dep :morph_catalogue, :jobname => "SharedCatalogue"
   input :sample_contigs, :integer, "Number of sample contigs", 200
   extension "fa.gz"
-  task :sample_fasta => :text do |sample_contigs|
+  task :sample_fasta_balanced => :text do |sample_contigs|
     catalogue = load_morphs step(:morph_catalogue).path
     catalogue_keys = catalogue.keys
     selected_base_morphs = []
@@ -191,6 +191,47 @@ module SyntheticRDNA
     Open.mv tmpfile + '.gz', self.tmp_path
     nil
   end
+
+  dep :morph_catalogue, :jobname => "SharedCatalogue"
+  input :sample_contigs, :integer, "Number of sample contigs", 200
+  extension "fa.gz"
+  task :sample_fasta => :text do |sample_contigs|
+    catalogue = load_morphs step(:morph_catalogue).path
+    catalogue_keys = catalogue.keys
+
+    number_of_base_morphs = (5..20).to_a.sample
+
+    base_morphs = []
+    while base_morphs.length < number_of_base_morphs
+      base_morphs << catalogue_keys.sample
+      base_morphs.uniq!
+    end
+
+    selected_base_morphs = []
+    sample_contig = 1
+    txts = []
+    while selected_base_morphs.length < sample_contigs
+      base_morphs.each do |base|
+        copies = rand(100).to_i
+        copies.times do |copy|
+          selected_base_morphs << base
+          sequence = catalogue[base]
+          name = ">sample_#{sample_contig}.#{base[1..-1]}"
+          txts << [name, sequence] * "\n"
+          sample_contig += 1
+        end
+        break if selected_base_morphs.length > sample_contig
+      end
+    end
+
+    tmpfile = file('tmp.fa')
+    Open.write(file('selected_base_morphs.list'), selected_base_morphs * "\n")
+    Open.write(tmpfile, txts * "\n" + "\n")
+    CMD.cmd("bgzip #{tmpfile}")
+    Open.mv tmpfile + '.gz', self.tmp_path
+    nil
+  end
+
 
   dep :sample_fasta
   dep_task :simulate_sample, HTSBenchmark, :NEAT_simulate_DNA, :reference => :sample_fasta
