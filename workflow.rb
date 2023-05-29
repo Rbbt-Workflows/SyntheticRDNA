@@ -194,12 +194,16 @@ module SyntheticRDNA
 
   dep :morph_catalogue, :jobname => "SharedCatalogue"
   input :sample_contigs, :integer, "Number of sample contigs", 200
+  input :number_of_base_morphs_min, :integer, "Min number of different base morphs in sample", 5
+  input :number_of_base_morphs_max, :integer, "Max number of different base morphs in sample", 20
+  input :number_of_copies_per_base_morph_min, :integer, "Min number of copies per base morph", 1
+  input :number_of_copies_per_base_morph_max, :integer, "MAx number of copies per base morph", 100
   extension "fa.gz"
-  task :sample_fasta => :text do |sample_contigs|
+  task :sample_fasta => :text do |sample_contigs, number_of_base_morphs_min, number_of_base_morphs_max, number_of_copies_per_base_morph_min, number_of_copies_per_base_morph_max|
     catalogue = load_morphs step(:morph_catalogue).path
     catalogue_keys = catalogue.keys
 
-    number_of_base_morphs = (5..20).to_a.sample
+    number_of_base_morphs = (number_of_base_morphs_min..number_of_base_morphs_max).to_a.sample
 
     base_morphs = []
     while base_morphs.length < number_of_base_morphs
@@ -212,7 +216,7 @@ module SyntheticRDNA
     txts = []
     while selected_base_morphs.length < sample_contigs
       base_morphs.each do |base|
-        copies = rand(100).to_i
+        copies = (number_of_copies_per_base_morph_min..number_of_copies_per_base_morph_max).to_a.sample
         copies.times do |copy|
           selected_base_morphs << base
           sequence = catalogue[base]
@@ -225,7 +229,7 @@ module SyntheticRDNA
     end
 
     tmpfile = file('tmp.fa')
-    Open.write(file('selected_base_morphs.list'), selected_base_morphs * "\n")
+    Open.write(file('selected_base_morphs.list'), selected_base_morphs * "\n" + "\n")
     Open.write(tmpfile, txts * "\n" + "\n")
     CMD.cmd("bgzip #{tmpfile}")
     Open.mv tmpfile + '.gz', self.tmp_path
