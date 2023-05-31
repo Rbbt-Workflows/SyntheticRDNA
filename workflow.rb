@@ -250,6 +250,16 @@ module SyntheticRDNA
     dependencies.collect{|dep| dep.load }.flatten
   end
 
+  input :number_of_samples, :integer, "How many samples to generate", 100
+  dep :sample_fasta do |jobname,options|
+    options[:number_of_samples].to_i.times.collect do |i|
+      {:inputs => options, :jobname => "Sample#{i}"}
+    end
+  end
+  task :sample_cohort_fasta => :array do
+    dependencies.collect{|dep| dep.path }.flatten
+  end
+
 end
 
 #require 'SyntheticRDNA/tasks/basic.rb'
