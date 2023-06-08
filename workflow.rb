@@ -193,16 +193,18 @@ module SyntheticRDNA
   end
 
   dep :morph_catalogue, :jobname => "SharedCatalogue"
-  input :sample_contigs, :integer, "Number of sample contigs", 200
+  input :sample_contigs_min, :integer, "Min number of contigs in sample", 200
+  input :sample_contigs_max, :integer, "Max number of contigs in sample", 600
   input :number_of_base_morphs_min, :integer, "Min number of different base morphs in sample", 5
   input :number_of_base_morphs_max, :integer, "Max number of different base morphs in sample", 20
   input :number_of_copies_per_base_morph_min, :integer, "Min number of copies per base morph", 1
   input :number_of_copies_per_base_morph_max, :integer, "Max number of copies per base morph", 100
   extension "fa.gz"
-  task :sample_fasta => :text do |sample_contigs, number_of_base_morphs_min, number_of_base_morphs_max, number_of_copies_per_base_morph_min, number_of_copies_per_base_morph_max|
+  task :sample_fasta => :text do |sample_contigs_min,sample_contigs_max, number_of_base_morphs_min, number_of_base_morphs_max, number_of_copies_per_base_morph_min, number_of_copies_per_base_morph_max|
     catalogue = load_morphs step(:morph_catalogue).path
     catalogue_keys = catalogue.keys
 
+    sample_contigs = (sample_contigs_min..sample_contigs_max).to_a.sample
     number_of_base_morphs = (number_of_base_morphs_min..number_of_base_morphs_max).to_a.sample
 
     base_morphs = []
