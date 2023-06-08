@@ -231,6 +231,7 @@ module SyntheticRDNA
     end
 
     tmpfile = file('tmp.fa')
+    Open.write(file('selected_base_morphs.json'), Misc.counts(selected_base_morphs).to_json)
     Open.write(file('selected_base_morphs.list'), selected_base_morphs * "\n" + "\n")
     Open.write(tmpfile, txts * "\n" + "\n")
     CMD.cmd("bgzip #{tmpfile}")
