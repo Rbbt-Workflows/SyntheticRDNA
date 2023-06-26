@@ -38,8 +38,19 @@ module SyntheticRDNA
     morphs
   end
 
-  helper :preprocess_mutation do |morph,pad|
-    pos = rand(morph.length).floor
+  helper :preprocess_mutation do |morph,pad,regions,size=1|
+    pass = false
+    while ! pass
+      pos = rand(morph.length).floor
+      pass = true
+      regions.each do |region|
+        if region.include? pos
+          pass = false
+        elsif (pos..pos+size-1).include?(region.first)
+          pass = false
+        end
+      end if regions
+    end
 
     start = pos - pad
     eend = pos + pad
@@ -56,13 +67,22 @@ module SyntheticRDNA
   input :number_of_ins, :integer, "Number of insertions", 20
   input :number_of_del, :integer, "Number of deletions", 20
   input :pad, :integer, "Surronding area", 10
-  task :mutation_catalogue => :array do |reference_morphs,number_of_snvs,number_of_ins,number_of_del,pad|
+  input :conserved_regions, :text, "BED file with regions to conserve"
+  task :mutation_catalogue => :array do |reference_morphs,number_of_snvs,number_of_ins,number_of_del,pad,conserved_regions|
     morphs = load_morphs reference_morphs
+
+    regions = {}
+    conserved_regions.split("\n").each do |line| 
+      morph_code, s,e = line.split("\t")
+      region = (s.to_i..e.to_i) 
+      regions[morph_code] ||= []
+      regions[morph_code] << region
+    end if conserved_regions
 
     snvs = number_of_snvs.times.collect do 
       morph_code = morphs.keys.sample
       morph = morphs[morph_code]
-      pos, start, eend, reference, original = preprocess_mutation morph, pad
+      pos, start, eend, reference, original = preprocess_mutation morph, pad, regions[morph_code[1..-1]]
 
       alt = (%w(A C T G) - [reference.upcase]).shuffle.first
       alt = alt.downcase if reference == reference.downcase
@@ -77,7 +97,7 @@ module SyntheticRDNA
     ins = number_of_ins.times.collect do 
       morph_code = morphs.keys.sample
       morph = morphs[morph_code]
-      pos, start, eend, reference, original = preprocess_mutation morph, pad
+      pos, start, eend, reference, original = preprocess_mutation morph, pad, regions[morph_code]
 
       size = rand(6).to_i + 2
       alt = size.times.collect{ %w(A C T G).sample } * ""
@@ -92,9 +112,10 @@ module SyntheticRDNA
     dels = number_of_del.times.collect do 
       morph_code = morphs.keys.sample
       morph = morphs[morph_code]
-      pos, start, eend, reference, original = preprocess_mutation morph, pad
 
       size = rand(6).to_i + 1
+      pos, start, eend, reference, original = preprocess_mutation morph, pad, regions[morph_code], size
+
       mutated = begin
                   tmp = morph.dup
                   tmp[(pos..pos+size-1)] = ""
