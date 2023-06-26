@@ -1,24 +1,12 @@
 require 'rbbt-util'
-require 'rbbt/workflow'
 
 Misc.add_libdir if __FILE__ == $0
 
 #require 'rbbt/sources/SyntheticRDNA'
 
-Workflow.require_workflow "HTSBenchmark"
-Workflow.require_workflow "HTS"
+Workflow.require_workflow "NEATGenReads"
 module SyntheticRDNA
   extend Workflow
-
-  dep_task :simulate_t2t, HTSBenchmark, :NEAT_simulate_DNA, :reference => Rbbt.data["T2T_rDNA45S.219_morphs.fa.gz"]
-
-  dep :simulate_t2t
-  dep_task :align_simulated_t2t, HTS, :BAM, :skip_rescore => true, :reference => Rbbt.data["T2T_rDNA45S.24_uniq_morphs.fa.gz"] do |jobname,options,dependencies|
-    dep = dependencies.flatten.first
-    options[:fastq1] = dep.file('output/' + jobname + '_read1.fq.gz')
-    options[:fastq2] = dep.file('output/' + jobname + '_read2.fq.gz')
-    {:inputs => options}
-  end
 
   helper :load_morphs do |fasta_file|
     morphs = {}
@@ -261,7 +249,7 @@ module SyntheticRDNA
 
 
   dep :sample_fasta
-  dep_task :simulate_sample, HTSBenchmark, :NEAT_simulate_DNA, :reference => :sample_fasta
+  dep_task :simulate_sample, NEATGenReads, :NEAT_simulate_DNA, :reference => :sample_fasta
 
   input :number_of_samples, :integer, "How many samples to generate", 100
   dep :simulate_sample do |jobname,options|
