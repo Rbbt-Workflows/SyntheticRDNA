@@ -50,7 +50,7 @@ module SyntheticRDNA
     [pos, start, eend, reference, original]
   end
 
-  input :reference_morphs_for_mutations, :file, "FASTA with reference morphs", Rbbt.data["T2T_rDNA.consensus.single.fa.gz"]
+  input :reference_morphs_for_mutations, :file, "FASTA with reference morphs", Rbbt.data["T2T_rDNA.consensus.single.fa.gz"].find
   input :number_of_snvs, :integer, "Number of SNV to introduce", 100
   input :number_of_ins, :integer, "Number of insertions", 20
   input :number_of_del, :integer, "Number of deletions", 20
@@ -116,7 +116,7 @@ module SyntheticRDNA
   end
 
   dep :mutation_catalogue
-  input :reference_morphs_for_templates, :file, "FASTA with reference morphs", Rbbt.data["T2T_rDNA45S.24_uniq_morphs.fa.gz"]
+  input :reference_morphs_for_templates, :file, "FASTA with reference morphs", Rbbt.data["T2T_rDNA45S.24_uniq_morphs.fa.gz"].find
   input :catalogue_size, :integer, "Number of synthetic morphs to create", 144
   input :mutations_per_morph, :integer, "Number of mutations to introduce in each morph", 10
   extension "fa"
