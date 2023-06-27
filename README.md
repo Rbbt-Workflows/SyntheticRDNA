@@ -9,14 +9,6 @@ morphs can share mutations across them
 
 # Tasks
 
-## simulate_t2t
-
-Simulates the t2t sample using a FASTA file with all the contigs
-
-## align_simulated_t2t
-
-Align the simulated t2t sample using the HTS workflow
-
 ## mutation_catalogue
 
 Creates a catalogue of mutations that will be incorporated into the different synthetic morphs
