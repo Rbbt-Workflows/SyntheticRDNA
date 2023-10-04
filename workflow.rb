@@ -216,6 +216,8 @@ module SyntheticRDNA
     sample_contigs = (sample_contigs_min..sample_contigs_max).to_a.sample
     number_of_base_morphs = (number_of_base_morphs_min..number_of_base_morphs_max).to_a.sample
 
+    Log.medium "sample_contigs: #{sample_contigs}"
+
     base_morphs = []
     while base_morphs.length < number_of_base_morphs
       base_morphs << catalogue_keys.sample
@@ -228,6 +230,7 @@ module SyntheticRDNA
     while selected_base_morphs.length < sample_contigs
       base_morphs.each do |base|
         copies = (number_of_copies_per_base_morph_min..number_of_copies_per_base_morph_max).to_a.sample
+        Log.medium "base_morph_copies #{[base, copies] * ": "}"
         copies.times do |copy|
           selected_base_morphs << base
           sequence = catalogue[base]
