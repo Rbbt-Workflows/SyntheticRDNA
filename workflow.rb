@@ -228,7 +228,7 @@ module SyntheticRDNA
     sample_contig = 1
     txts = []
     while selected_base_morphs.length < sample_contigs
-      base_morphs.each do |base|
+      base_morphs.each_with_index do |base,base_num|
         copies = (number_of_copies_per_base_morph_min..number_of_copies_per_base_morph_max).to_a.sample
         Log.medium "base_morph_copies #{[base, copies] * ": "}"
         copies.times do |copy|
@@ -238,9 +238,13 @@ module SyntheticRDNA
           txts << [name, sequence] * "\n"
           sample_contig += 1
         end
+        break if selected_base_morphs.length > sample_contigs_max
+        next if base_num + 1 < number_of_base_morphs_min 
         break if selected_base_morphs.length > sample_contigs
       end
     end
+
+    Log.medium "sample_contigs real: #{selected_base_morphs.length}"
 
     tmpfile = file('tmp.fa')
     Open.write(file('selected_base_morphs.list'), selected_base_morphs * "\n" + "\n")
