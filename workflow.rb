@@ -88,13 +88,18 @@ module SyntheticRDNA
       pos, start, eend, reference, original = preprocess_mutation morph, pad, regions[morph_code]
 
       size = rand(6).to_i + 2
+      #pos = [pos, morph.length - 1].min  # Added by aisha Ensure pos is within the valid range
+
       alt = size.times.collect{ %w(A C T G).sample } * ""
+      ref_allele = morph[pos] # added by aisha
       mutated = begin
                   tmp = morph.dup
                   tmp[pos] += alt
                   tmp[start..eend+size] 
                 end
-      [original, mutated] * "=>" + "-" + [morph_code, pos + 1, "+" + alt,pos - start] * ":"
+      #[original, mutated] * "=>" + "-" + [morph_code, pos + 1, "+" + alt,pos - start] * ":"
+      #[morph[pos], mutated] * "=>" + "-" + [morph_code, pos, "+" + alt, pos - start] * ":" # added by aisha
+      [original, mutated] * "=>" + "-" + [morph_code, pos + 1, ref_allele + ">" + ref_allele + alt,pos - start] * ":"  # added by aisha
     end
 
     dels = number_of_del.times.collect do 
@@ -103,13 +108,18 @@ module SyntheticRDNA
 
       size = rand(6).to_i + 1
       pos, start, eend, reference, original = preprocess_mutation morph, pad, regions[morph_code], size
-
+      #pos = [pos, morph.length - size].min  # Added by aisha Ensure pos is within the valid range
       mutated = begin
                   tmp = morph.dup
+		  deleted_sequence = tmp[(pos-1)..(pos+size-1)]
+                  ref_allele = deleted_sequence[0]
+		  #deleted_sequence = tmp[(pos..pos+size-1)] # added by aisha
+		  #deleted_sequence = tmp[(pos-1..pos+size-1)] # added by aisha
                   tmp[(pos..pos+size-1)] = ""
                   tmp[start..(eend-size)] 
                 end
-      [original, mutated] * "=>" + "-" + [morph_code, pos + 1, "-" * size,pos - start] * ":"
+      #[original, mutated] * "=>" + "-" + [morph_code, pos + 1, "-" * size,pos - start] * ":"
+      [original, mutated] * "=>" + "-" + [morph_code, pos , deleted_sequence +">"+ ref_allele , pos - start] * ":" # added by aisha
     end
 
     snvs + ins + dels
@@ -247,6 +257,7 @@ module SyntheticRDNA
     Log.medium "sample_contigs real: #{selected_base_morphs.length}"
 
     tmpfile = file('tmp.fa')
+    Open.write(file('selected_base_morphs.json'), Misc.counts(selected_base_morphs).to_json)
     Open.write(file('selected_base_morphs.list'), selected_base_morphs * "\n" + "\n")
     Open.write(tmpfile, txts * "\n" + "\n")
     CMD.cmd("bgzip #{tmpfile}")
