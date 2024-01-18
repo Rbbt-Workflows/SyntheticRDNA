@@ -111,7 +111,7 @@ module SyntheticRDNA
       #pos = [pos, morph.length - size].min  # Added by aisha Ensure pos is within the valid range
       mutated = begin
                   tmp = morph.dup
-		  deleted_sequence = tmp[(pos-1)..(pos+size-1)]
+                  deleted_sequence = tmp[(pos-1)..(pos+size-1)]
                   ref_allele = deleted_sequence[0]
 		  #deleted_sequence = tmp[(pos..pos+size-1)] # added by aisha
 		  #deleted_sequence = tmp[(pos-1..pos+size-1)] # added by aisha
